@@ -1,0 +1,40 @@
+
+#user  nobody;
+worker_processes  1;
+
+#error_log  logs/error.log;
+#error_log  logs/error.log  notice;
+#error_log  logs/error.log  info;
+
+#pid        logs/nginx.pid;
+
+
+events {
+    worker_connections  1024;
+}
+
+
+stream {
+    upstream dns_udp_upstreams {
+        server ${DNS1_PORT_53_UDP_ADDR}:53;
+        server ${DNS2_PORT_53_UDP_ADDR}:53;
+    }
+
+    upstream dns_tcp_upstreams {
+        server ${DNS1_PORT_53_TCP_ADDR}:53;
+        server ${DNS2_PORT_53_TCP_ADDR}:53;
+    }
+
+    server {
+        listen 53 udp;
+        proxy_pass dns_udp_upstreams;
+        proxy_timeout 1s;
+        proxy_responses 1;
+    }
+
+    server {
+        listen 53;
+        proxy_pass dns_tcp_upstreams;
+        proxy_timeout 1s;
+    }
+}

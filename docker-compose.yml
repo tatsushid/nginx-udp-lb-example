@@ -1,0 +1,26 @@
+nginx:
+  build: .
+  volumes:
+    - ./nginx.conf.template:/etc/nginx/nginx.conf.template:ro
+  links:
+    - dns1
+    - dns2
+  ports:
+    - 53:53/udp
+    - 53:53/tcp
+  command: >
+    /bin/sh -c 'sed -e "s/\$${\{0,1\}DNS1_PORT_53_UDP_ADDR}\{0,1\}/$$DNS1_PORT_53_UDP_ADDR/g"
+    -e "s/\$${\{0,1\}DNS2_PORT_53_UDP_ADDR}\{0,1\}/$$DNS2_PORT_53_UDP_ADDR/g"
+    -e "s/\$${\{0,1\}DNS1_PORT_53_TCP_ADDR}\{0,1\}/$$DNS1_PORT_53_TCP_ADDR/g"
+    -e "s/\$${\{0,1\}DNS2_PORT_53_TCP_ADDR}\{0,1\}/$$DNS2_PORT_53_TCP_ADDR/g"
+    < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && nginx -g "daemon off;"'
+dns1:
+  image: andyshinn/dnsmasq
+  cap_add:
+    - NET_ADMIN
+  command: --host-record=example.com,127.0.0.10
+dns2:
+  image: andyshinn/dnsmasq
+  cap_add:
+    - NET_ADMIN
+  command: --host-record=example.com,127.0.0.20
